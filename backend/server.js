@@ -52,6 +52,100 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 
 // --- AUTH ROUTES (EMAIL OTP) ---
+// --- DHARLINK CHAT ENGINE ---
+
+// 1. SEARCH: Find neighbors by name or email
+app.get('/api/users/search', async (req, res) => {
+  const { query } = req.query;
+  try {
+    const neighbors = await db.collection("users")
+      .find({
+        $or: [
+          { email: { $regex: query, $options: 'i' } },
+          { name: { $regex: query, $options: 'i' } }
+        ]
+      })
+      .limit(5)
+      .toArray();
+    res.json(neighbors);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. SEND: Save a new message
+app.post('/api/messages/send', async (req, res) => {
+  const { senderEmail, receiverEmail, itemId, itemTitle, text } = req.body;
+  try {
+    const newMessage = {
+      senderEmail,
+      receiverEmail,
+      itemId: itemId ? new ObjectId(itemId) : null,
+      itemTitle: itemTitle || "Neighbor Chat",
+      text,
+      isRead: false,
+      createdAt: new Date()
+    };
+    await db.collection("messages").insertOne(newMessage);
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. INBOX: Get all messages involving the user (to build the sidebar list)
+app.get('/api/messages/:email', async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+    const messages = await db.collection("messages")
+      .find({
+        $or: [
+          { receiverEmail: userEmail },
+          { senderEmail: userEmail }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// 4. THREAD: Get full history between two people
+app.get('/api/messages/thread/:user1/:user2', async (req, res) => {
+  try {
+    const { user1, user2 } = req.params;
+    const thread = await db.collection("messages")
+      .find({
+        $or: [
+          { senderEmail: user1, receiverEmail: user2 },
+          { senderEmail: user2, receiverEmail: user1 }
+        ]
+      })
+      .sort({ createdAt: 1 }) // Order by time for the chat bubbles
+      .toArray();
+    res.json(thread);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. READ STATUS: Mark all messages from a neighbor as read (Clears Navbar Badge)
+app.patch('/api/messages/read-thread/:me/:neighbor', async (req, res) => {
+  try {
+    const { me, neighbor } = req.params;
+    await db.collection("messages").updateMany(
+      { receiverEmail: me, senderEmail: neighbor, isRead: false },
+      { $set: { isRead: true } }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 app.post('/api/auth/send-otp', async (req, res) => {
   const { email } = req.body;
@@ -119,7 +213,36 @@ app.get('/api/items/all', async (req, res) => {
   }
 });
 
+app.get('/api/requests/all-open', async (req, res) => {
+  try {
+    // Access your database collection directly
+    const requests = await db.collection('community_requests')
+      .find({ status: 'open' })
+      .sort({ createdAt: -1 }) // Newest first
+      .toArray();
+    res.json(requests);
+  } catch (err) {
+    res.status(500).send("Error fetching board");
+  }
+});
 
+app.post('/api/requests/create', async (req, res) => {
+  try {
+    const newRequest = {
+      requesterEmail: req.body.requesterEmail,
+      requesterName: req.body.requesterName,
+      title: req.body.title,
+      description: req.body.description,
+      status: 'open',
+      createdAt: new Date()
+    };
+
+    await db.collection('community_requests').insertOne(newRequest);
+    res.status(201).send("Request posted");
+  } catch (err) {
+    res.status(500).send("Error posting request");
+  }
+});
 
 // 1. Get all items listed by a specific user
 app.get('/api/items/user/:uid', async (req, res) => {
@@ -235,6 +358,27 @@ app.post('/api/requests/create', async (req, res) => {
     res.status(201).json({ message: "Request sent!" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/requests/delete/:id', async (req, res) => {
+  try {
+    const { email } = req.body; // Pass userEmail from frontend for safety
+    const requestId = req.params.id;
+
+    // Only delete if the ID matches AND the email belongs to the requester
+    const result = await db.collection('community_requests').deleteOne({
+      _id: new ObjectId(requestId),
+      requesterEmail: email
+    });
+
+    if (result.deletedCount === 1) {
+      res.status(200).send("Request removed");
+    } else {
+      res.status(403).send("Unauthorized or not found");
+    }
+  } catch (err) {
+    res.status(500).send("Error deleting");
   }
 });
 
