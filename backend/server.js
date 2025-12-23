@@ -238,19 +238,147 @@ app.delete('/api/items/delete/:id', async (req, res) => {
 
 ///! --- 4. BORROW REQUEST ROUTES ---
 
+// --- CREATE REQUEST ---
 app.post('/api/requests/create', async (req, res) => {
   try {
-    const { itemId, lenderEmail, borrowerEmail, borrowerPhone, message } = req.body;
+    const { itemId, lenderEmail, borrowerEmail, borrowerPhone, message, duration } = req.body;
+
+    // Find the item to ensure it exists and get its title
     const item = await db.collection("items").findOne({ _id: new ObjectId(itemId) });
+    if (!item) return res.status(404).json({ error: "Item not found" });
+
     const newRequest = {
       itemId: new ObjectId(itemId),
-      itemTitle: item ? item.title : "Unknown Item",
-      lenderEmail, borrowerEmail, borrowerPhone, message,
+      itemTitle: item.title,
+      lenderEmail,
+      borrowerEmail,
+      borrowerPhone,
+      message,
+      duration: duration || '1 Days',
       status: 'pending',
-      createdAt: new Date()
+      createdAt: new Date(),
+      // Adding these as null/empty initially for consistency in the DB
+      returnTime: null,
+      excessTime: null
     };
+
     await db.collection("requests").insertOne(newRequest);
-    res.status(201).json({ message: "Request sent!" });
+    res.status(201).json({ message: "Request sent successfully!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- APPROVE REQUEST ---
+app.patch('/api/requests/approve/:id', async (req, res) => {
+  try {
+    const requestId = new ObjectId(req.params.id);
+    const request = await db.collection("requests").findOne({ _id: requestId });
+
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    // Duration calculation logic
+    const durationStr = request.duration || "1 Days";
+    const [val, unit] = durationStr.split(' ');
+    const numValue = parseInt(val) || 1;
+
+    let returnDate = new Date();
+    if (unit?.toLowerCase().includes('day')) {
+      returnDate.setDate(returnDate.getDate() + numValue);
+    } else {
+      returnDate.setHours(returnDate.getHours() + numValue);
+    }
+
+    // Update both Request and Item simultaneously
+    const requestUpdate = db.collection("requests").updateOne(
+      { _id: requestId },
+      { $set: { status: 'approved', returnTime: returnDate } }
+    );
+
+    const itemUpdate = db.collection("items").updateOne(
+      { _id: new ObjectId(request.itemId) },
+      { $set: { status: 'booked', returnTime: returnDate } }
+    );
+
+    await Promise.all([requestUpdate, itemUpdate]);
+
+    res.json({
+      message: "Request approved!",
+      returnTime: returnDate,
+      duration: durationStr
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- COMPLETE REQUEST ---
+app.patch('/api/requests/complete/:id', async (req, res) => {
+  try {
+    const requestId = new ObjectId(req.params.id);
+    const request = await db.collection("requests").findOne({ _id: requestId });
+
+    if (!request) return res.status(404).json({ message: "Request not found" });
+    if (request.status === 'completed') return res.status(400).json({ message: "Already completed" });
+
+    const now = new Date();
+    // Safety check: if returnTime is missing, assume on-time
+    const dueDate = request.returnTime ? new Date(request.returnTime) : now;
+
+    let excessTimeLabel = "On Time";
+    let borrowerKarma = 10;
+
+    if (now > dueDate) {
+      const diffMs = now - dueDate;
+      const diffHours = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60)));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      excessTimeLabel = diffDays > 0 ? `${diffDays} days late` : `${diffHours} hours late`;
+
+      // Penalty: -2 Karma per hour late, min 2 Karma points
+      borrowerKarma = Math.max(2, 10 - (diffHours * 2));
+    }
+
+    // 1. Finalize Request
+    const updateRequest = db.collection("requests").updateOne(
+      { _id: requestId },
+      {
+        $set: {
+          status: 'completed',
+          rating: req.body.rating || 5,
+          completedAt: now,
+          excessTime: excessTimeLabel,
+          finalBorrowerKarma: borrowerKarma // Useful for history
+        }
+      }
+    );
+
+    // 2. Clear Item status
+    const updateItem = db.collection("items").updateOne(
+      { _id: new ObjectId(request.itemId) },
+      { $set: { status: 'available' }, $unset: { returnTime: "" } }
+    );
+
+    // 3. Award Karma to both users
+    const updateBorrower = db.collection("users").updateOne(
+      { email: request.borrowerEmail },
+      { $inc: { karma: borrowerKarma, totalDeals: 1 } }
+    );
+
+    const updateLender = db.collection("users").updateOne(
+      { email: request.lenderEmail },
+      { $inc: { karma: 15, totalDeals: 1 } }
+    );
+
+    // Run all database operations
+    await Promise.all([updateRequest, updateItem, updateBorrower, updateLender]);
+
+    res.json({
+      message: `Item returned! Status: ${excessTimeLabel}.`,
+      borrowerEarned: borrowerKarma,
+      excessTime: excessTimeLabel
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -274,6 +402,8 @@ app.get('/api/requests/owner/:email', async (req, res) => {
         $project: {
           itemId: 1, itemTitle: 1, lenderEmail: 1, borrowerEmail: 1,
           borrowerPhone: 1, message: 1, status: 1, createdAt: 1,
+          duration: 1,      // ADD THIS
+          returnTime: 1,    // ADD THIS
           borrowerName: "$borrowerDetails.name"
         }
       },
@@ -301,6 +431,8 @@ app.get('/api/requests/borrower/:email', async (req, res) => {
         $project: {
           itemId: 1, itemTitle: 1, lenderEmail: 1, borrowerEmail: 1,
           borrowerPhone: 1, message: 1, status: 1, createdAt: 1,
+          duration: 1,    // <--- ADD THIS
+          returnTime: 1,
           lenderName: "$lenderDetails.name",// Extract Lender Name
           lenderPhone: "$lenderDetails.phone" // ADD THIS LINE
         }
@@ -311,35 +443,6 @@ app.get('/api/requests/borrower/:email', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.patch('/api/requests/approve/:id', async (req, res) => {
-  try {
-    const requestId = new ObjectId(req.params.id);
-    const request = await db.collection("requests").findOne({ _id: requestId });
-    if (!request) return res.status(404).json({ message: "Request not found" });
-    await db.collection("requests").updateOne({ _id: requestId }, { $set: { status: 'approved' } });
-    await db.collection("items").updateOne({ _id: new ObjectId(request.itemId) }, { $set: { status: 'booked' } });
-    res.json({ message: "Item status is now Booked" });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.patch('/api/requests/complete/:id', async (req, res) => {
-  try {
-    const requestId = new ObjectId(req.params.id);
-    const request = await db.collection("requests").findOne({ _id: requestId });
-    if (!request) return res.status(404).json({ message: "Request not found" });
-
-    await db.collection("requests").updateOne(
-      { _id: requestId },
-      { $set: { status: 'completed', rating: req.body.rating || 5, completedAt: new Date() } }
-    );
-    await db.collection("items").updateOne({ _id: new ObjectId(request.itemId) }, { $set: { status: 'available' } });
-
-    await db.collection("users").updateOne({ email: request.borrowerEmail }, { $inc: { karma: 10, totalDeals: 1 } });
-    await db.collection("users").updateOne({ email: request.lenderEmail }, { $inc: { karma: 15, totalDeals: 1 } });
-
-    res.json({ message: "Item is Available & Karma Awarded!" });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
 
 app.patch('/api/requests/reject/:id', async (req, res) => {
   try {

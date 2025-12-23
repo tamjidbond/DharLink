@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaHandHoldingHeart, FaUserCircle, FaCheckCircle, FaBan } from 'react-icons/fa';
+import CountdownTimer from '../CountdownTimer';
 
 const IncomingRequests = ({ requests, handleApprove, handleReject, handleComplete }) => (
   <div className="space-y-4">
@@ -11,6 +12,9 @@ const IncomingRequests = ({ requests, handleApprove, handleReject, handleComplet
             <h3 className="font-bold text-slate-800 uppercase text-[10px] tracking-wider mb-1">Item: {req.itemTitle}</h3>
             <p className="text-slate-900 text-sm font-black flex items-center gap-2"><FaUserCircle className="text-slate-400" /> {req.borrowerName || "Neighbor"}</p>
             <p className="text-indigo-600 text-xs font-bold mt-1">{req.borrowerEmail}</p>
+            {req.status === 'approved' && req.returnTime && (
+              <CountdownTimer returnTime={req.returnTime} />
+            )}
             {req.borrowerPhone && (
               <a href={`https://wa.me/+88${req.borrowerPhone.replace(/\D/g, '')}?text=Hi, I am the owner of ${req.itemTitle} on DharLink!`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-3 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold hover:bg-emerald-600 transition">💬 Chat on WhatsApp</a>
             )}
@@ -37,9 +41,18 @@ const IncomingRequests = ({ requests, handleApprove, handleReject, handleComplet
               </div>
             )}
             {(req.status === 'completed' || req.status === 'rejected') && (
-              <span className={`flex items-center justify-center gap-1 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest w-full ${req.status === 'completed' ? 'text-emerald-500 bg-emerald-50' : 'text-rose-400 bg-rose-50'}`}>
-                {req.status === 'completed' ? <FaCheckCircle /> : <FaBan />} {req.status}
-              </span>
+              <div className="flex flex-col items-center gap-1 w-full lg:w-48">
+                <span className={`flex items-center justify-center gap-1 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest w-full ${req.status === 'completed' ? 'text-emerald-500 bg-emerald-50' : 'text-rose-400 bg-rose-50'}`}>
+                  {req.status === 'completed' ? <FaCheckCircle /> : <FaBan />} {req.status}
+                </span>
+
+                {/* ADD THIS: Show the excess time result */}
+                {req.status === 'completed' && req.excessTime && req.excessTime !== "On Time" && (
+                  <span className="text-[9px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                    {req.excessTime.toUpperCase()}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
