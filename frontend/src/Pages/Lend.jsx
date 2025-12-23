@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaf
 import { FaPlus, FaCamera, FaMapMarkerAlt, FaCheckCircle, FaPhoneAlt, FaEnvelope, FaTag, FaClock } from 'react-icons/fa';
 import L from 'leaflet';
 import { useNavigate } from 'react-router';
+import Swal from 'sweetalert2';
 
 // Custom Marker Icon for the Map
 const redIcon = new L.Icon({
@@ -43,17 +44,17 @@ const LocationMarker = ({ setCoordinates }) => {
 const Lend = () => {
   const navigate = useNavigate();
   const userEmail = localStorage.getItem('userEmail');
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: 'Tools',
-    price: '',         
-    priceType: 'Day',  
+    price: '',
+    priceType: 'Day',
     phone: '',
     address: '', // Manual Input
   });
-  
+
   const [itemImage, setItemImage] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -64,7 +65,7 @@ const Lend = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!userEmail) return;
-      
+
       setFetchingUser(true);
       try {
         const res = await axios.get(`http://localhost:8000/api/users/profile-by-email/${userEmail}`);
@@ -96,7 +97,16 @@ const Lend = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!itemImage || !coordinates || !formData.phone || !formData.address) {
-      return alert("Please fill all fields, upload an image, and pin your location on the map.");
+      return Swal.fire({
+        icon: 'info',
+        title: 'Missing Information',
+        text: 'Please fill all fields, upload an image, and pin your location on the map.',
+        confirmButtonColor: '#4f46e5', // Matches DharLink Indigo
+        background: '#ffffff',
+        showClass: {
+          popup: 'animate__animated animate__headShake' // Optional: adds a little shake
+        }
+      });
     }
 
     setLoading(true);
@@ -107,14 +117,21 @@ const Lend = () => {
         ...formData,
         image: base64Image,
         coordinates: coordinates,
-        lentBy: userEmail, 
+        lentBy: userEmail,
       });
 
       setSuccess(true);
-      setTimeout(() => navigate('/'), 2500); 
+      setTimeout(() => navigate('/'), 2500);
 
     } catch (err) {
-      alert("Error adding item: " + err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Posting Failed',
+        text: 'Error adding item: ' + (err.response?.data?.message || err.message),
+        confirmButtonColor: '#ef4444', // Red for errors
+        background: '#ffffff',
+        footer: '<a href="https://github.com/your-repo/issues" style="color: #6366f1; font-weight: bold;">Report this issue?</a>'
+      });
     }
     setLoading(false);
   };
@@ -148,28 +165,28 @@ const Lend = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        
+
         {/* ITEM DETAILS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Item Title</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 ring-indigo-500 mt-1 transition"
                 placeholder="e.g. Electric Drill"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
               />
             </div>
 
             <div>
               <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
-              <select 
+              <select
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 ring-indigo-500 mt-1 transition"
                 value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               >
                 <option>Tools</option><option>Books</option><option>Kitchenware</option>
                 <option>Electronics</option><option>Sports</option><option>Other</option>
@@ -179,12 +196,12 @@ const Lend = () => {
 
           <div>
             <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Description</label>
-            <textarea 
+            <textarea
               rows="5"
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 ring-indigo-500 mt-1 resize-none transition"
               placeholder="Condition, rules, or features."
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
             ></textarea>
           </div>
@@ -196,12 +213,12 @@ const Lend = () => {
             <label className="text-xs font-black uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
               <FaTag /> Price (0 for Free)
             </label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 ring-indigo-500 mt-1 transition"
               placeholder="e.g. 50"
               value={formData.price}
-              onChange={(e) => setFormData({...formData, price: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               required
             />
           </div>
@@ -210,20 +227,20 @@ const Lend = () => {
               <FaClock /> Price Per
             </label>
             <div className="flex gap-2 mt-1">
-                <button 
-                  type="button"
-                  onClick={() => setFormData({...formData, priceType: 'Hour'})}
-                  className={`flex-1 p-4 rounded-2xl font-bold transition ${formData.priceType === 'Hour' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-500'}`}
-                >
-                  Hour
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setFormData({...formData, priceType: 'Day'})}
-                  className={`flex-1 p-4 rounded-2xl font-bold transition ${formData.priceType === 'Day' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-500'}`}
-                >
-                  Day
-                </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, priceType: 'Hour' })}
+                className={`flex-1 p-4 rounded-2xl font-bold transition ${formData.priceType === 'Hour' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-500'}`}
+              >
+                Hour
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, priceType: 'Day' })}
+                className={`flex-1 p-4 rounded-2xl font-bold transition ${formData.priceType === 'Day' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border border-slate-200 text-slate-500'}`}
+              >
+                Day
+              </button>
             </div>
           </div>
         </div>
@@ -234,8 +251,8 @@ const Lend = () => {
             <label className="text-xs font-black uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
               <FaPhoneAlt /> Your Phone (Auto)
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full p-4 bg-indigo-100/50 border border-indigo-200 rounded-2xl text-slate-500 mt-1 cursor-not-allowed"
               value={formData.phone || ''}
               disabled
@@ -245,8 +262,8 @@ const Lend = () => {
             <label className="text-xs font-black uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
               <FaEnvelope /> Your Email (Auto)
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full p-4 bg-indigo-100/50 border border-indigo-200 rounded-2xl text-slate-500 mt-1 cursor-not-allowed"
               value={userEmail || ''}
               disabled
@@ -256,12 +273,12 @@ const Lend = () => {
             <label className="text-xs font-black uppercase tracking-widest text-indigo-400 ml-1 flex items-center gap-2">
               <FaMapMarkerAlt /> Precise Landmark / House Address (Manual)
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full p-4 bg-white border border-indigo-100 rounded-2xl outline-none focus:ring-2 ring-indigo-500 mt-1 transition"
               placeholder="Type your landmark or address here..."
               value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               required
             />
           </div>
@@ -269,29 +286,29 @@ const Lend = () => {
 
         {/* PHOTO & PIN LOCATION */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Item Photo</label>
-              <div className="mt-1 border-2 border-dashed border-slate-200 p-10 rounded-3xl text-center bg-slate-50 hover:bg-white transition relative">
-                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={(e) => setItemImage(e.target.files[0])} />
-                <FaCamera className="text-4xl text-indigo-300 mx-auto mb-2" />
-                <p className="text-sm font-bold text-slate-600">{itemImage ? itemImage.name : "Click to Upload Photo"}</p>
-              </div>
-           </div>
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Item Photo</label>
+            <div className="mt-1 border-2 border-dashed border-slate-200 p-10 rounded-3xl text-center bg-slate-50 hover:bg-white transition relative">
+              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={(e) => setItemImage(e.target.files[0])} />
+              <FaCamera className="text-4xl text-indigo-300 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-600">{itemImage ? itemImage.name : "Click to Upload Photo"}</p>
+            </div>
+          </div>
 
-           <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Pin Pickup Point</label>
-              <div className="h-44 mt-1 rounded-3xl overflow-hidden border-4 border-slate-50 z-0">
-                <MapContainer center={[23.8103, 90.4125]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  <LocationMarker setCoordinates={setCoordinates} />
-                </MapContainer>
-              </div>
-           </div>
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Pin Pickup Point</label>
+            <div className="h-44 mt-1 rounded-3xl overflow-hidden border-4 border-slate-50 z-0">
+              <MapContainer center={[23.8103, 90.4125]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <LocationMarker setCoordinates={setCoordinates} />
+              </MapContainer>
+            </div>
+          </div>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading} 
+        <button
+          type="submit"
+          disabled={loading}
           className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-xl hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50"
         >
           {loading ? "Posting..." : "Post to DharLink"}

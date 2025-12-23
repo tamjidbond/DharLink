@@ -8,6 +8,7 @@ import {
 import { useNavigate, useParams } from 'react-router';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import Swal from 'sweetalert2';
 
 // --- LEAFLET ICON FIX ---
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -91,20 +92,43 @@ const ItemDetail = () => {
     const handleRequest = async () => {
         const userEmail = localStorage.getItem('userEmail');
 
+        // 1. Check if logged in
         if (!userEmail) {
-            alert("Please login or register to borrow items!");
-            navigate('/register');
+            Swal.fire({
+                title: 'Sign In Required',
+                text: 'Join the DharLink community to borrow items!',
+                icon: 'warning',
+                confirmButtonColor: '#4f46e5',
+                confirmButtonText: 'Sign In Now',
+                background: '#ffffff',
+            }).then((result) => {
+                if (result.isConfirmed) navigate('/register');
+            });
             return;
         }
 
+        // 2. Check if phone exists (for owner contact)
         if (!borrowerPhone) {
-            alert("Please update your phone number in your profile first so the owner can reach you!");
-            navigate('/profile');
+            Swal.fire({
+                title: 'Missing Contact Info',
+                text: 'Please add your phone number so the owner can coordinate the pickup with you.',
+                icon: 'info',
+                confirmButtonColor: '#4f46e5',
+                confirmButtonText: 'Update Profile',
+            }).then((result) => {
+                if (result.isConfirmed) navigate('/profile');
+            });
             return;
         }
 
+        // 3. Prevent borrowing own item
         if (userEmail === data?.item?.lentBy) {
-            alert("You cannot borrow your own item!");
+            Swal.fire({
+                title: 'Nice try!',
+                text: 'You already own this item. You cannot borrow from yourself!',
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+            });
             return;
         }
 
@@ -249,8 +273,8 @@ const ItemDetail = () => {
                                 onClick={handleRequest}
                                 disabled={requestLoading || item.status === 'booked'}
                                 className={`w-full py-5 rounded-3xl font-black text-lg transition-all shadow-xl flex items-center justify-center gap-3 ${item.status === 'booked'
-                                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                                        : 'bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100'
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                                    : 'bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100'
                                     }`}
                             >
                                 {requestLoading ? "Sending Request..." : item.status === 'booked' ? "Already Booked" : "Send Borrow Request"}

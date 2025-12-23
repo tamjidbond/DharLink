@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import { FaShieldAlt, FaChartPie, FaCubes, FaBiohazard, FaSync, FaTags } from 'react-icons/fa';
 
 // Import our new components
@@ -21,11 +22,19 @@ const Admin = () => {
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-  useEffect(() => {
-    // Check the email stored in localStorage
-    const storedEmail = localStorage.getItem('userEmail');
+  // Custom Toast configuration for quick "Success" messages
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    background: '#1e293b',
+    color: '#fff'
+  });
 
-    // If it's not your specific admin email, kick them to the home page
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
     if (storedEmail !== 'bondtamjid02@gmail.com') {
       window.location.href = "/";
     }
@@ -45,7 +54,9 @@ const Admin = () => {
       setStats(s.data);
       setIntelligence(intel.data);
       setCategories(cat.data);
-    } catch (err) { console.error("Admin Fetch Error:", err); }
+    } catch (err) { 
+      console.error("Admin Fetch Error:", err); 
+    }
     setLoading(false);
   };
 
@@ -58,23 +69,56 @@ const Admin = () => {
       await axios.post('http://localhost:8000/api/categories/add', { name: newCategoryName });
       setNewCategoryName("");
       fetchAllAdminData();
-    } catch (err) { alert("Add failed"); }
+      Toast.fire({ icon: 'success', title: 'Category added successfully' });
+    } catch (err) { 
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not add category', background: '#0f172a', color: '#fff' });
+    }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm("Remove category?")) return;
-    try {
-      await axios.delete(`http://localhost:8000/api/categories/${id}`);
-      fetchAllAdminData();
-    } catch (err) { alert("Delete failed"); }
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#6366f1',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Yes, delete it!',
+      background: '#1e293b',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/api/categories/${id}`);
+        fetchAllAdminData();
+        Toast.fire({ icon: 'success', title: 'Category removed' });
+      } catch (err) { 
+        Swal.fire('Error!', 'Delete failed.', 'error'); 
+      }
+    }
   };
 
   const handleDeleteItem = async (id) => {
-    if (!window.confirm("Delete item?")) return;
-    try {
-      await axios.delete(`http://localhost:8000/api/items/delete/${id}`);
-      fetchAllAdminData();
-    } catch (err) { alert("Delete failed"); }
+    const result = await Swal.fire({
+      title: 'Delete Item?',
+      text: "This item will be removed from the public map.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#4f46e5',
+      background: '#1e293b',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/api/items/delete/${id}`);
+        fetchAllAdminData();
+        Toast.fire({ icon: 'success', title: 'Item deleted' });
+      } catch (err) { 
+        Swal.fire('Error!', 'Delete failed.', 'error'); 
+      }
+    }
   };
 
   if (loading) return (

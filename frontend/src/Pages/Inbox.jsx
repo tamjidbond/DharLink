@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // Added Swal
 import { FaPaperPlane, FaUserCircle, FaInbox, FaSearch, FaArrowLeft, FaPlus } from 'react-icons/fa';
 
 const Chat = () => {
@@ -16,6 +17,17 @@ const Chat = () => {
     const userEmail = localStorage.getItem('userEmail');
     const scrollRef = useRef();
 
+    // SweetAlert Toast Configuration
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#ffffff',
+        color: '#1e293b'
+    });
+
     // Fetch Unique Conversations
     const fetchChats = async () => {
         try {
@@ -24,12 +36,14 @@ const Chat = () => {
                 m.senderEmail === userEmail ? m.receiverEmail : m.senderEmail
             ))];
             setConversations(uniquePeople);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+        }
         setLoading(false);
     };
 
     useEffect(() => {
-        fetchChats();
+        if(userEmail) fetchChats();
     }, [userEmail]);
 
     // Live Search Logic
@@ -37,42 +51,28 @@ const Chat = () => {
         const query = e.target.value;
         setSearchQuery(query);
         if (query.length > 2) {
-            const res = await axios.get(`http://localhost:8000/api/users/search?query=${query}`);
-            // Filter out yourself from results
-            setSearchResults(res.data.filter(u => u.email !== userEmail));
+            try {
+                const res = await axios.get(`http://localhost:8000/api/users/search?query=${query}`);
+                setSearchResults(res.data.filter(u => u.email !== userEmail));
+            } catch (err) {
+                console.error("Search failed");
+            }
         } else {
             setSearchResults([]);
         }
     };
 
-    // Polling for new messages in active chat
-    useEffect(() => {
-        if (activeChat) {
-            const fetchThread = async () => {
-                const res = await axios.get(`http://localhost:8000/api/messages/thread/${userEmail}/${activeChat}`);
-                setMessages(res.data);
-            };
-            fetchThread();
-            const interval = setInterval(fetchThread, 4000);
-            return () => clearInterval(interval);
-        }
-    }, [activeChat, userEmail]);
-
+    // Polling and Read Status Logic
     useEffect(() => {
         if (activeChat) {
             const markAsReadAndFetch = async () => {
                 try {
-                    // 1. Fetch the messages
                     const res = await axios.get(`http://localhost:8000/api/messages/thread/${userEmail}/${activeChat}`);
                     setMessages(res.data);
 
-                    // 2. If there are unread messages meant for ME, tell backend to mark as read
                     const unreadForMe = res.data.some(m => !m.isRead && m.receiverEmail === userEmail);
-
                     if (unreadForMe) {
                         await axios.patch(`http://localhost:8000/api/messages/read-thread/${userEmail}/${activeChat}`);
-
-                        // 3. TRIGGER: Send the signal to the Navbar to hide the badge
                         window.dispatchEvent(new Event('messagesRead'));
                     }
                 } catch (err) {
@@ -105,9 +105,25 @@ const Chat = () => {
             await axios.post('http://localhost:8000/api/messages/send', msgData);
             setMessages([...messages, { ...msgData, createdAt: new Date() }]);
             setNewMessage("");
-            // If this was a new person from search, refresh the sidebar
             if (!conversations.includes(activeChat)) fetchChats();
-        } catch (err) { alert("Failed to send"); }
+        } catch (err) { 
+            // Integrated SweetAlert2 Error
+            Swal.fire({
+                icon: 'error',
+                title: 'Message Not Sent',
+                text: 'Check your internet connection and try again.',
+                confirmButtonColor: '#4f46e5'
+            });
+        }
+    };
+
+    const startNewChat = (user) => {
+        setActiveChat(user.email);
+        setSearchQuery('');
+        Toast.fire({
+            icon: 'success',
+            title: `Connected with ${user.name.split(' ')[0]}`
+        });
     };
 
     if (loading) return <div className="p-20 text-center font-black animate-pulse text-indigo-600">Syncing DharLink Conversations...</div>;
@@ -122,7 +138,6 @@ const Chat = () => {
                         <FaInbox className="text-indigo-600" /> Neighbors
                     </h2>
 
-                    {/* SEARCH INPUT */}
                     <div className="relative">
                         <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
@@ -143,7 +158,7 @@ const Chat = () => {
                             {searchResults.map(user => (
                                 <div
                                     key={user._id}
-                                    onClick={() => { setActiveChat(user.email); setSearchQuery(''); }}
+                                    onClick={() => startNewChat(user)}
                                     className="px-6 py-3 flex items-center gap-3 cursor-pointer hover:bg-indigo-100 transition-all"
                                 >
                                     <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white"><FaPlus size={12} /></div>
@@ -158,21 +173,25 @@ const Chat = () => {
 
                     {/* RECENT CHATS SECTION */}
                     <p className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Recent Chats</p>
-                    {conversations.map((person) => (
-                        <div
-                            key={person}
-                            onClick={() => setActiveChat(person)}
-                            className={`px-6 py-4 flex items-center gap-3 cursor-pointer transition-all ${activeChat === person ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50'}`}
-                        >
-                            <FaUserCircle size={36} className={activeChat === person ? 'text-white' : 'text-slate-200'} />
-                            <div className="overflow-hidden">
-                                <p className={`font-black text-sm truncate ${activeChat === person ? 'text-white' : 'text-slate-800'}`}>
-                                    {person.split('@')[0]}
-                                </p>
-                                <p className={`text-[9px] font-bold uppercase ${activeChat === person ? 'text-indigo-200' : 'text-slate-400'}`}>Neighbor</p>
+                    {conversations.length === 0 ? (
+                        <p className="px-6 py-4 text-xs font-bold text-slate-400 italic">No recent messages</p>
+                    ) : (
+                        conversations.map((person) => (
+                            <div
+                                key={person}
+                                onClick={() => setActiveChat(person)}
+                                className={`px-6 py-4 flex items-center gap-3 cursor-pointer transition-all ${activeChat === person ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50'}`}
+                            >
+                                <FaUserCircle size={36} className={activeChat === person ? 'text-white' : 'text-slate-200'} />
+                                <div className="overflow-hidden">
+                                    <p className={`font-black text-sm truncate ${activeChat === person ? 'text-white' : 'text-slate-800'}`}>
+                                        {person.split('@')[0]}
+                                    </p>
+                                    <p className={`text-[9px] font-bold uppercase ${activeChat === person ? 'text-indigo-200' : 'text-slate-400'}`}>Neighbor</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
 
