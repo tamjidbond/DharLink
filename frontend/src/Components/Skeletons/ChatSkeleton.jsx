@@ -1,5 +1,5 @@
 const ChatSkeleton = () => (
-    <div className="max-w-6xl mx-auto h-[85vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex animate-pulse">
+    <div className="max-w-6xl mx-auto h-[65vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex animate-pulse">
         {/* Sidebar Skeleton */}
         <div className="w-full md:w-96 border-r border-slate-50 flex flex-col">
             <div className="p-6 space-y-4">

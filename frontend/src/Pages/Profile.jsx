@@ -8,6 +8,7 @@ import ProfileHeader from '../Components/profile-components/ProfileHeader';
 import IncomingRequests from '../Components/profile-components/IncomingRequests';
 import MyListings from '../Components/profile-components/MyListings';
 import MyBorrowing from '../Components/profile-components/MyBorrowing';
+import ProfileSkeleton from '../Components/Skeletons/ProfileSkeleton';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('lending');
@@ -158,10 +159,7 @@ const Profile = () => {
   };
 
   if (loading) return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center gap-6">
-      <FaCircleNotch className="text-4xl text-indigo-600 animate-spin" />
-      <p className="font-black text-slate-400 uppercase tracking-[0.3em] text-[10px]">Syncing DharLink Dashboard</p>
-    </div>
+    <ProfileSkeleton></ProfileSkeleton>
   );
 
   return (

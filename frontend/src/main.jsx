@@ -13,6 +13,8 @@ import Inbox from './Pages/Inbox.jsx';
 import Welcome from './Pages/Welcome.jsx';
 import ApplyRequest from './Pages/ApplyRequest.jsx';
 import RequestBoard from './Pages/ApplyRequest.jsx';
+import HyperAdvancedLanding from './Pages/Welcome.jsx';
+import DeveloperContact from './Pages/DevelopperContacts.jsx';
 
 const router = createBrowserRouter([
   {
@@ -22,10 +24,11 @@ const router = createBrowserRouter([
       { path: '/', element: <Home /> },
       { path: '/lend', element: <Lend /> },
       { path: '/item/:id', element: <ItemDetail /> },
-      { path: '/register', element: <Register /> } ,
-      {path: '/profile', element: <Profile></Profile>},
-      {path: '/inbox', element: <Inbox></Inbox>},
-      {path: '/requestBoard', element: <RequestBoard></RequestBoard>}
+      { path: '/register', element: <Register /> },
+      { path: '/profile', element: <Profile></Profile> },
+      { path: '/inbox', element: <Inbox></Inbox> },
+      { path: '/requestBoard', element: <RequestBoard></RequestBoard> },
+      { path: '/contact', element: <DeveloperContact></DeveloperContact> },
       
     ]
   },

@@ -5,128 +5,182 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const HyperAdvancedLanding = () => {
+const CreativeLanding = () => {
   const canvasRef = useRef();
-  const contentRef = useRef();
+  const mouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    // --- THREE.JS SCENE SETUP ---
+    // --- ENGINE SETUP ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ 
+      canvas: canvasRef.current, 
+      alpha: true, 
+      antialias: true,
+      powerPreference: "high-performance" 
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Create a Particle Field (The Community)
-    const particlesCount = 5000;
-    const posArray = new Float32Array(particlesCount * 3);
-    for (let i = 0; i < particlesCount * 3; i++) {
-      posArray[i] = (Math.random() - 0.5) * 10;
+    // --- THE NEURAL MESH (CREATIVE CORE) ---
+    const geometry = new THREE.BufferGeometry();
+    const count = 150; // Focused count for meaningful connections
+    const positions = new Float32Array(count * 3);
+    
+    for(let i = 0; i < count * 3; i++) {
+      positions[i] = (Math.random() - 0.5) * 10;
     }
-    const particlesGeometry = new THREE.BufferGeometry();
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particlesMaterial = new THREE.PointsMaterial({ size: 0.005, color: '#6366f1' });
-    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particlesMesh);
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-    camera.position.z = 3;
+    // Custom Shader-like Material
+    const material = new THREE.PointsMaterial({
+      size: 0.04,
+      color: '#6366f1',
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true
+    });
 
-    // --- GSAP + THREE.JS ANIMATION ---
-    const render = () => {
-      renderer.render(scene, camera);
-      requestAnimationFrame(render);
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    // Create Lines (The "Links")
+    const lineMaterial = new THREE.LineBasicMaterial({ color: '#4338ca', transparent: true, opacity: 0.2 });
+    const lineGeometry = new THREE.BufferGeometry();
+    const lineMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
+    scene.add(lineMesh);
+
+    camera.position.z = 5;
+
+    // --- INTERACTION LOGIC ---
+    const onMouseMove = (e) => {
+      mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
-    render();
+    window.addEventListener('mousemove', onMouseMove);
 
-    // Rotate particles on scroll
-    gsap.to(particlesMesh.rotation, {
-      y: Math.PI * 2,
+    // --- ANIMATION LOOP ---
+    const animate = () => {
+      const time = Date.now() * 0.0005;
+      
+      // Gentle floating motion
+      points.rotation.y = time * 0.1;
+      points.rotation.x = time * 0.05;
+
+      // Mouse following parallax
+      gsap.to(camera.position, {
+        x: mouse.current.x * 1.5,
+        y: mouse.current.y * 1.5,
+        duration: 2,
+        ease: "power2.out"
+      });
+
+      // Dynamic Line Building (Connecting the dots)
+      const currentPos = points.geometry.attributes.position.array;
+      const linePositions = [];
+      for (let i = 0; i < count; i++) {
+        for (let j = i + 1; j < count; j++) {
+          const dx = currentPos[i * 3] - currentPos[j * 3];
+          const dy = currentPos[i * 3 + 1] - currentPos[j * 3 + 1];
+          const dz = currentPos[i * 3 + 2] - currentPos[j * 3 + 2];
+          const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+          
+          if (dist < 1.5) { // Connection threshold
+            linePositions.push(currentPos[i*3], currentPos[i*3+1], currentPos[i*3+2]);
+            linePositions.push(currentPos[j*3], currentPos[j*3+1], currentPos[j*3+2]);
+          }
+        }
+      }
+      lineMesh.geometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+      lineMesh.rotation.copy(points.rotation);
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    };
+    animate();
+
+    // --- SCROLL ORCHESTRATION ---
+    gsap.timeline({
       scrollTrigger: {
-        trigger: "body",
+        trigger: ".main-container",
         start: "top top",
         end: "bottom bottom",
-        scrub: 2,
+        scrub: 1.5
       }
-    });
+    })
+    .to(camera.position, { z: 2, ease: "none" })
+    .to(scene.fog, { far: 1, ease: "none" }, 0);
 
-    // Zoom into the field on scroll
-    gsap.to(camera.position, {
-      z: 1,
-      scrollTrigger: {
-        trigger: ".second-section",
-        start: "top bottom",
-        end: "top top",
-        scrub: true,
-      }
-    });
-
-    // --- TEXT REVEAL ANIMATION ---
-    const tl = gsap.timeline();
-    tl.from(".reveal-text", {
-      y: 200,
-      rotationX: -90,
-      opacity: 0,
-      stagger: 0.2,
-      duration: 2,
-      ease: "expo.out"
-    });
-
-    return () => {
-      renderer.dispose();
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => window.removeEventListener('mousemove', onMouseMove);
   }, []);
 
   return (
-    <div className="bg-[#020617] text-white">
-      {/* 3D CANVAS BACKGROUND */}
-      <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
+    <div className="main-container bg-[#020617] text-white selection:bg-indigo-500 overflow-x-hidden">
+      <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none" />
 
-      {/* HERO SECTION */}
-      <section className="h-screen flex flex-col items-center justify-center relative px-4 overflow-hidden">
-        <div className="text-center perspective-1000">
-          <h1 className="reveal-text text-[12vw] font-black leading-none tracking-tighter uppercase italic">
-            Hyper <br /> <span className="text-indigo-500">Linked</span>
-          </h1>
-          <p className="reveal-text text-xl font-light tracking-[0.5em] mt-10 opacity-60">
-            DHARLINK ENGINE v2.0
-          </p>
+      {/* SECTION 1: KINETIC TYPOGRAPHY */}
+      <section className="h-screen flex flex-col justify-center px-6 md:px-20 relative">
+        <div className="overflow-hidden">
+          <h2 className="text-indigo-500 font-mono text-sm tracking-[0.8em] mb-4 animate-pulse">SYSTEM INITIALIZED // V2.0</h2>
+        </div>
+        <h1 className="text-[14vw] md:text-[10vw] font-black leading-[0.85] tracking-tighter uppercase">
+          DHAR <br /> 
+          <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20">LINK.</span>
+        </h1>
+        <div className="mt-12 flex flex-col md:flex-row gap-10 md:items-center">
+            <div className="w-20 h-[1px] bg-indigo-500" />
+            <p className="max-w-md text-slate-400 text-lg leading-relaxed font-light">
+                A decentralized borrowing protocol built for the next generation of physical asset sharing.
+            </p>
+        </div>
+        
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4">
+            <span className="text-[10px] font-black tracking-widest text-slate-600 uppercase">Scroll to Connect</span>
+            <div className="w-[1px] h-20 bg-gradient-to-b from-indigo-500 to-transparent" />
         </div>
       </section>
 
-      {/* SECOND SECTION: THE INTERACTIVE GRID */}
-      <section className="second-section min-h-screen py-32 px-10 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-32">
-            <div className="space-y-10">
-              <h2 className="text-8xl font-black leading-none">Shared <br/> Economy</h2>
-              <p className="text-2xl text-slate-400 leading-relaxed">
-                We are moving away from ownership into a fluid state of access. 
-                Our community is a living organism.
-              </p>
-              <div className="h-1 w-full bg-gradient-to-r from-indigo-500 to-transparent" />
-            </div>
-            
-            <div className="relative group">
-               {/* Magnetic Floating Card */}
-               <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-12 rounded-[4rem] hover:bg-white/10 transition-all duration-700 hover:-translate-y-10 group cursor-crosshair">
-                  <div className="text-6xl mb-8">⚡</div>
-                  <h3 className="text-4xl font-bold mb-4">Instant Access</h3>
-                  <p className="text-slate-400">The items you need are within 500 meters of your current location.</p>
-               </div>
-            </div>
-          </div>
+      {/* SECTION 2: GLITCH CARDS */}
+      <section className="min-h-screen py-40 px-6 md:px-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <FeatureCard 
+            number="01" 
+            title="Local Protocol" 
+            desc="Items mapped within 500m via spatial-intelligence." 
+          />
+          <FeatureCard 
+            number="02" 
+            title="Karma Ledger" 
+            desc="Trust-weighted borrowing scores for every neighbor." 
+            active
+          />
+          <FeatureCard 
+            number="03" 
+            title="Zero Waste" 
+            desc="Maximizing item lifecycle through community velocity." 
+          />
         </div>
       </section>
 
-      {/* FOOTER CALL TO ACTION */}
-      <section className="h-screen flex items-center justify-center">
-         <button className="relative group overflow-hidden px-16 py-8 rounded-full border border-white/20 hover:border-indigo-500 transition-colors">
-            <span className="relative z-10 text-xl font-black tracking-widest group-hover:text-indigo-500">INITIALIZE NETWORK</span>
-            <div className="absolute inset-0 bg-indigo-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-         </button>
+      {/* FINAL CTA: THE VOID */}
+      <section className="h-[80vh] flex flex-col items-center justify-center text-center px-6">
+          <h2 className="text-5xl md:text-8xl font-black mb-10 tracking-tighter">READY TO JOIN THE <br/> NEIGHBORHOOD?</h2>
+          <button className="group relative px-12 py-5 bg-white text-black font-black uppercase tracking-tighter hover:bg-indigo-500 hover:text-white transition-all duration-500 rounded-full overflow-hidden">
+            <span className="relative z-10">Launch Dashboard</span>
+            <div className="absolute inset-0 translate-y-full group-hover:translate-y-0 bg-black transition-transform duration-500" />
+          </button>
       </section>
     </div>
   );
 };
 
-export default HyperAdvancedLanding;
+const FeatureCard = ({ number, title, desc, active }) => (
+  <div className={`p-10 rounded-[3rem] border transition-all duration-500 group ${active ? 'bg-indigo-600 border-transparent' : 'bg-white/5 border-white/10 hover:border-indigo-500'}`}>
+    <span className="text-xs font-mono mb-10 block opacity-50 group-hover:translate-x-2 transition-transform">{number} —</span>
+    <h3 className="text-4xl font-black mb-4 tracking-tighter uppercase">{title}</h3>
+    <p className={`${active ? 'text-indigo-100' : 'text-slate-400'} leading-relaxed`}>{desc}</p>
+  </div>
+);
+
+export default CreativeLanding;

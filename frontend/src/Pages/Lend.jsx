@@ -214,7 +214,7 @@ const Lend = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100 my-10">
+    <div className="max-w-5xl mx-auto  p-10 my-10 bg-white/70 backdrop-blur-2xl mt-6 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1),0_0_80px_rgba(79,70,229,0.15)] border border-white/40">
       <div className="mb-10 border-b border-slate-50 pb-8 flex justify-between items-end">
         <div>
           <h2 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-4">

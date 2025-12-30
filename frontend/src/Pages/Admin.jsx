@@ -278,7 +278,7 @@ const Admin = () => {
             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
             System Online: Dharnow-v2.0
           </div>
-          <p>© 2025 DharLink Secure Admin</p>
+          <p>© 2025 DharNow Secure Admin</p>
         </footer>
       </div>
     </div>
