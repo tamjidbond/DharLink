@@ -131,7 +131,7 @@ const Chat = () => {
     if (loading) return <ChatSkeleton></ChatSkeleton>
 
     return (
-        <div className="max-w-6xl mx-auto h-[80vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex">
+        <div className="max-w-6xl mx-auto h-[70vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex">
 
             {/* SIDEBAR */}
             <div className={`w-full md:w-96 border-r border-slate-50 flex flex-col ${activeChat ? 'hidden md:flex' : 'flex'}`}>
