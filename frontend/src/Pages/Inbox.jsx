@@ -88,7 +88,7 @@ const Chat = () => {
     if (loading) return <ChatSkeleton />
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 flex items-center justify-center font-sans">
+        <div className=" bg-[#F8FAFC] p-4 md:p-8 flex items-center justify-center font-sans">
             {/* MAIN MAC-STYLE CONTAINER */}
             <div className="w-full max-w-7xl h-[65vh] bg-white/80 backdrop-blur-3xl border border-white rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] flex overflow-hidden relative">
                 
