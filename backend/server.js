@@ -54,7 +54,6 @@ async function startServer() {
   }
 }
 
-app.options('/*', cors());  // If you want OPTIONS routes specifically
 
 
 // --- BASE ROUTE ---
