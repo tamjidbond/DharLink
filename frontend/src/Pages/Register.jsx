@@ -12,9 +12,11 @@ const Register = () => {
     const handleSendCode = async () => {
         setLoading(true);
         try {
-            await axios.post('https://dharnow.onrender.com/api/auth/send-otp', { email });
+            const res = await axios.post('https://dharnow.onrender.com/api/auth/send-otp', { email });
+            console.log(res.data); // 👈 ADD THIS
             setStep(2);
         } catch (err) {
+            console.error(err.response?.data || err.message); // 👈 ADD THIS
             Swal.fire({
                 icon: 'error',
                 title: 'Email Failed',
