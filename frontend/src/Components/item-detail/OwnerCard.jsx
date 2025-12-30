@@ -9,13 +9,24 @@ const OwnerCard = ({ owner, item, handleRequest, requestLoading, formatWhatsAppN
             </h3>
 
             <div className="flex items-center gap-5 mb-10">
-                <div className="h-20 w-20 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white font-black text-3xl uppercase shadow-xl rotate-3">
-                    {owner?.name?.charAt(0) || "U"}
-                </div>
+                {/* --- SMART AVATAR START --- */}
+                {owner?.profileImage ? (
+                    <img 
+                        src={owner.profileImage} 
+                        alt={owner.name}
+                        className="h-20 w-20 rounded-[2rem] object-cover shadow-xl rotate-3 border-4 border-white"
+                    />
+                ) : (
+                    <div className="h-20 w-20 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white font-black text-3xl uppercase shadow-xl rotate-3">
+                        {owner?.name?.charAt(0) || "U"}
+                    </div>
+                )}
+                {/* --- SMART AVATAR END --- */}
+
                 <div>
                     <h4 className="font-black text-slate-800 text-2xl">{owner?.name || "Neighbor"}</h4>
                     <p className="text-xs text-slate-400 font-bold flex items-center gap-1 mt-1">
-                        <FaCalendarAlt /> Joined {owner?.createdAt ? new Date(owner.createdAt).getFullYear() : "2024"}
+                        <FaCalendarAlt /> Joined {owner?.createdAt ? new Date(owner.createdAt).getFullYear() : "2025"}
                     </p>
                 </div>
             </div>
