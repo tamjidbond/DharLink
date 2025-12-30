@@ -5,12 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const admin = require('firebase-admin');
-const serviceAccount = require('./firebase-service-account.json); // Make sure path is correct
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
 
 const app = express();
 
@@ -66,7 +61,30 @@ app.get('/', (req, res) => {
 
 
 // !-================================================================1. AUTHENTICATION ROUTES (OTP) ---==========================================================================
+// This route will handle Google Users
+app.post('/api/auth/google-login', async (req, res) => {
+  const { email, name, photoURL } = req.body;
+  
+  try {
+    let user = await db.collection("users").findOne({ email });
 
+    if (!user) {
+      user = {
+        email,
+        name: name || "DharLink Neighbor",
+        profileImage: photoURL || "",
+        address: "Address not set",
+        karma: 50,
+        createdAt: new Date(),
+        isAdmin: false
+      };
+      await db.collection("users").insertOne(user);
+    }
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.post('/api/auth/send-otp', async (req, res) => {
   const { email } = req.body;

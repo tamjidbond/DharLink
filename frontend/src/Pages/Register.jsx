@@ -1,110 +1,61 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { FaEnvelope, FaArrowRight } from 'react-icons/fa';
+import { auth, googleProvider } from '../firebase'; // Ensure you have firebase.js setup
+import { signInWithPopup } from 'firebase/auth';
+import { FcGoogle } from 'react-icons/fc';
 import Swal from 'sweetalert2';
 
 const Register = () => {
-    const [step, setStep] = useState(1);
-    const [email, setEmail] = useState("");
-    const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleSendCode = async () => {
+    const handleGoogleSignIn = async () => {
         setLoading(true);
         try {
-            const res = await axios.post('https://dharnow.onrender.com/api/auth/send-otp', { email });
-            console.log(res.data);
-            Swal.fire({
-                icon: 'success',
-                title: 'Check your inbox!',
-                text: 'Click the link in your email to sign in.',
-                confirmButtonColor: '#6366f1'
+            // 1. Pop up the Google Login window
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // 2. Send user info to your backend
+            const res = await axios.post('https://dharnow.onrender.com/api/auth/google-login', {
+                email: user.email,
+                name: user.displayName,
+                photoURL: user.photoURL
             });
-            setStep(2);
-        } catch (err) {
-            console.error(err.response?.data || err.message);
-            Swal.fire({ icon: 'error', title: 'Email Failed', text: 'Cannot send verification link.' });
-        }
-        setLoading(false);
-    };
-
-
-    const handleVerifyOtp = async () => {
-        setLoading(true);
-        try {
-            const res = await axios.post('https://dharnow.onrender.com/api/auth/verify-otp', { email, otp });
 
             if (res.data.success) {
-                localStorage.setItem('userEmail', email);
-
-                // If this is a new user, register them automatically in the background
-                if (res.data.newUser) {
-                    await axios.post('https://dharnow.onrender.com/api/users/register', {
-                        email: email,
-                        name: "DharNow User", // Default placeholder
-                        address: "Address not set",// Default placeholder
-                    });
-                }
-
-                // Redirect to Home immediately
-                window.location.href = "/";
+                localStorage.setItem('userEmail', user.email);
+                Swal.fire({
+                    icon: 'success',
+                    title: `Welcome, ${user.displayName}!`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+                window.location.href = "/"; // Go home
             }
         } catch (err) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Wrong Code',
-                text: 'The OTP you entered is incorrect. Please check your inbox and try again.',
-                confirmButtonColor: '#4f46e5',
-                showClass: {
-                    popup: 'animate__animated animate__headShake'
-                }
-            });
+            console.error(err);
+            Swal.fire({ icon: 'error', title: 'Login Failed', text: 'Google Sign-In was cancelled or failed.' });
         }
         setLoading(false);
     };
 
     return (
-        <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl shadow-2xl border border-slate-100">
-            {/* STEP 1: EMAIL INPUT */}
-            {step === 1 && (
-                <div className="space-y-6 text-center">
-                    <h2 className="text-2xl font-black">DharNow Sign In</h2>
-                    <p className="text-slate-500 text-sm">Enter your email to receive a code</p>
-                    <input
-                        className="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 ring-indigo-500"
-                        placeholder="Email Address"
-                        onChange={e => setEmail(e.target.value)}
-                    />
-                    <button
-                        onClick={handleSendCode}
-                        disabled={loading}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
-                    >
-                        {loading ? "Sending..." : "Send Code"} <FaArrowRight />
-                    </button>
-                </div>
-            )}
+        <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl shadow-2xl border border-slate-100 text-center">
+            <h2 className="text-3xl font-black mb-2">DharLink</h2>
+            <p className="text-slate-500 mb-8">Borrow and Lend with your Neighbors</p>
+            
+            <button
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 py-4 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+            >
+                <FcGoogle size={24} />
+                {loading ? "Connecting..." : "Continue with Google"}
+            </button>
 
-            {/* STEP 2: OTP INPUT */}
-            {step === 2 && (
-                <div className="space-y-6 text-center">
-                    <h2 className="text-2xl font-black">Enter OTP</h2>
-                    <p className="text-slate-500 text-sm">Check your inbox for a 6-digit code</p>
-                    <input
-                        className="w-full p-4 border rounded-2xl text-center text-3xl tracking-widest font-black bg-slate-50 outline-none focus:ring-2 ring-emerald-500"
-                        onChange={e => setOtp(e.target.value)}
-                        maxLength="6"
-                        placeholder="000000"
-                    />
-                    <button
-                        onClick={handleVerifyOtp}
-                        disabled={loading}
-                        className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 transition"
-                    >
-                        {loading ? "Verifying..." : "Verify & Login"}
-                    </button>
-                </div>
-            )}
+            <p className="mt-6 text-xs text-slate-400">
+                By signing in, you agree to our Community Guidelines.
+            </p>
         </div>
     );
 };
