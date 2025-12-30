@@ -10,31 +10,24 @@ const Register = () => {
 
     const handleGoogleSignIn = async () => {
         setLoading(true);
+        console.log("1. Starting Google Sign In..."); // Check console for this
         try {
-            // 1. Pop up the Google Login window
             const result = await signInWithPopup(auth, googleProvider);
-            const user = result.user;
+            console.log("2. Google accepted! User:", result.user.email);
 
-            // 2. Send user info to your backend
             const res = await axios.post('https://dharnow.onrender.com/api/auth/google-login', {
-                email: user.email,
-                name: user.displayName,
-                photoURL: user.photoURL
+                email: result.user.email,
+                name: result.user.displayName,
+                photoURL: result.user.photoURL
             });
+            console.log("3. Backend response:", res.data);
 
             if (res.data.success) {
-                localStorage.setItem('userEmail', user.email);
-                Swal.fire({
-                    icon: 'success',
-                    title: `Welcome, ${user.displayName}!`,
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-                window.location.href = "/"; // Go home
+                localStorage.setItem('userEmail', result.user.email);
+                window.location.href = "/";
             }
         } catch (err) {
-            console.error(err);
-            Swal.fire({ icon: 'error', title: 'Login Failed', text: 'Google Sign-In was cancelled or failed.' });
+            console.error("❌ ERROR AT STEP:", err.code, err.message);
         }
         setLoading(false);
     };
@@ -43,7 +36,7 @@ const Register = () => {
         <div className="max-w-md mx-auto mt-20 p-8 bg-white rounded-3xl shadow-2xl border border-slate-100 text-center">
             <h2 className="text-3xl font-black mb-2">DharLink</h2>
             <p className="text-slate-500 mb-8">Borrow and Lend with your Neighbors</p>
-            
+
             <button
                 onClick={handleGoogleSignIn}
                 disabled={loading}
