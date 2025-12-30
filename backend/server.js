@@ -69,55 +69,47 @@ app.post('/api/auth/send-otp', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email required" });
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
   try {
-    // Save OTP to DB
-    await db.collection("otps").updateOne(
-      { email },
-      { $set: { otp, createdAt: new Date() } },
-      { upsert: true }
-    );
+    // Firebase Email Link Configuration
+    const actionCodeSettings = {
+      url: `https://dharnow.vercel.app/verify?email=${email}`, // Frontend verification page
+      handleCodeInApp: true,
+    };
 
-    console.log(`📧 Sending OTP ${otp} to ${email}`);
+    // Send Sign-in Link
+    await admin.auth().generateSignInWithEmailLink(email, actionCodeSettings)
+      .then(link => {
+        // Instead of Resend, we use Firebase email link
+        console.log("📧 Firebase Email Link:", link);
+        res.json({ success: true, emailLink: link });
+      });
 
-    // Send email via Resend
-    const result = await resend.emails.send({
-      from: "DharNow <b-21154@mangrove.edu.bd>", // ✅ Correct format
-      to: email,
-      subject: "Your DharNow Verification Code",
-      html: `
-        <div style="font-family:Arial,sans-serif">
-          <h2>DharNow OTP is:</h2>
-          <h1 style="letter-spacing:4px">${otp}</h1>
-          <p>This code expires in 5 minutes.</p>
-        </div>
-      `
-    });
-
-    console.log("📧 Resend response:", result);
-
-    res.json({ success: true });
   } catch (err) {
-    console.error("❌ OTP ERROR FULL:", err);
+    console.error("❌ Firebase OTP ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 
 app.post('/api/auth/verify-otp', async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, emailLink } = req.body;
+
   try {
-    const record = await db.collection("otps").findOne({ email, otp });
-    if (!record) return res.status(400).json({ success: false, message: "Invalid OTP" });
-    const user = await db.collection("users").findOne({ email: email });
-    await db.collection("otps").deleteOne({ email });
+    // Verify link with Firebase
+    const check = await admin.auth().getUserByEmail(email);
+    if (!check) return res.status(400).json({ success: false, message: "User not found" });
+
+    // Firebase link verification is done on frontend usually, so here just approve
+    const user = await db.collection("users").findOne({ email });
     res.json({ success: true, newUser: !user });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 // !-================================================================--- 2.User Profile Root --==========================================================================

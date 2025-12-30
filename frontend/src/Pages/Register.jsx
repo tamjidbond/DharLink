@@ -13,21 +13,21 @@ const Register = () => {
         setLoading(true);
         try {
             const res = await axios.post('https://dharnow.onrender.com/api/auth/send-otp', { email });
-            console.log(res.data); // 👈 ADD THIS
+            console.log(res.data);
+            Swal.fire({
+                icon: 'success',
+                title: 'Check your inbox!',
+                text: 'Click the link in your email to sign in.',
+                confirmButtonColor: '#6366f1'
+            });
             setStep(2);
         } catch (err) {
-            console.error(err.response?.data || err.message); // 👈 ADD THIS
-            Swal.fire({
-                icon: 'error',
-                title: 'Email Failed',
-                text: 'We couldn’t send the verification code. Please check your internet connection or email address.',
-                confirmButtonColor: '#6366f1', 
-                background: '#ffffff',
-                footer: '<span style="color: #94a3b8; font-size: 11px;">Note: Free tier servers may take a moment to wake up.</span>'
-            });
+            console.error(err.response?.data || err.message);
+            Swal.fire({ icon: 'error', title: 'Email Failed', text: 'Cannot send verification link.' });
         }
         setLoading(false);
     };
+
 
     const handleVerifyOtp = async () => {
         setLoading(true);
