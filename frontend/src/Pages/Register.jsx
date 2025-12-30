@@ -28,14 +28,14 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-6 font-sans relative overflow-hidden">
+        <div className="min-h-[85vh]  flex items-center justify-center p-6 font-sans relative overflow-hidden">
             
             {/* SOFT GRADIENT BLOBS (Background) */}
-            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-gradient-to-br from-indigo-100 to-blue-50 blur-[100px] rounded-full opacity-60" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-gradient-to-tr from-purple-50 to-indigo-100 blur-[100px] rounded-full opacity-60" />
+            {/* <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-gradient-to-br from-indigo-100 to-blue-50 blur-[100px] rounded-full opacity-60" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-gradient-to-tr from-purple-50 to-indigo-100 blur-[100px] rounded-full opacity-60" /> */}
 
             {/* THE WHITE MAC WINDOW */}
-            <div className="w-full max-w-md bg-white/70 backdrop-blur-3xl border border-white rounded-[24px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] overflow-hidden animate-in fade-in zoom-in duration-500">
+            <div className="w-full max-w-md bg-white/70 backdrop-blur-3xl border shadow-xl shadow-blue-200 border-white rounded-[24px]  overflow-hidden animate-in fade-in zoom-in duration-500">
                 
                 {/* WINDOW TITLE BAR (Light Mode) */}
                 <div className="h-12 bg-white/40 border-b border-gray-200/50 flex items-center px-5 justify-between">
@@ -100,7 +100,7 @@ const Register = () => {
             </div>
 
             {/* Simple Bottom Credit */}
-            <div className="absolute bottom-8 text-gray-300 font-bold text-[10px] tracking-widest uppercase pointer-events-none">
+            <div className="absolute bottom-5 text-gray-400 font-bold text-[10px] tracking-widest uppercase pointer-events-none">
                 Design Standard © 2025 DharNow
             </div>
         </div>
