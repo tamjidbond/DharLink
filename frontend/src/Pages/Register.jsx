@@ -10,17 +10,14 @@ const Register = () => {
 
     const handleGoogleSignIn = async () => {
         setLoading(true);
-        console.log("1. Starting Google Sign In..."); // Check console for this
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            console.log("2. Google accepted! User:", result.user.email);
 
             const res = await axios.post('https://dharnow.onrender.com/api/auth/google-login', {
                 email: result.user.email,
                 name: result.user.displayName,
                 photoURL: result.user.photoURL
             });
-            console.log("3. Backend response:", res.data);
 
             if (res.data.success) {
                 localStorage.setItem('userEmail', result.user.email);

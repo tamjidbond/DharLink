@@ -14,7 +14,7 @@ const PostWish = ({ onWishPosted }) => {
             .then(res => res.json())
             .then(data => {
                 setCategories(data);
-                console.log("Categories loaded into DharLink:", data);
+                
             })
             .catch(err => console.error("Could not load categories:", err));
     }, []);

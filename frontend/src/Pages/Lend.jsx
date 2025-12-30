@@ -367,7 +367,7 @@ const Lend = () => {
           disabled={loading}
           className="w-full bg-slate-900 text-white py-7 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all shadow-2xl disabled:opacity-50"
         >
-          {loading ? "Syncing with DharLink..." : "Post to DharNow"}
+          {loading ? "Syncing with DharNow..." : "Post to DharNow"}
         </button>
       </form>
     </div>

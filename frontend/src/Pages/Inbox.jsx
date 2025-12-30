@@ -3,6 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { FaPaperPlane, FaUserCircle, FaInbox, FaSearch, FaArrowLeft, FaPlus, FaBoxOpen } from 'react-icons/fa';
 import { useNavigate } from 'react-router';
+import ChatSkeleton from '../Components/Skeletons/ChatSkeleton';
 
 const Chat = () => {
     const [conversations, setConversations] = useState([]);
@@ -127,10 +128,10 @@ const Chat = () => {
         });
     };
 
-    if (loading) return <div className="p-20 text-center font-black animate-pulse text-indigo-600">Syncing DharNow Conversations...</div>;
+    if (loading) return <ChatSkeleton></ChatSkeleton>
 
     return (
-        <div className="max-w-6xl mx-auto h-[85vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex">
+        <div className="max-w-6xl mx-auto h-[80vh] bg-white mt-6 rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex">
 
             {/* SIDEBAR */}
             <div className={`w-full md:w-96 border-r border-slate-50 flex flex-col ${activeChat ? 'hidden md:flex' : 'flex'}`}>

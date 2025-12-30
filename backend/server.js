@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
 // This route will handle Google Users
 app.post('/api/auth/google-login', async (req, res) => {
   const { email, name, photoURL } = req.body;
-  
+
   try {
     let user = await db.collection("users").findOne({ email });
 
@@ -693,7 +693,7 @@ app.get('/api/wishes', async (req, res) => {
   }
 });
 
-// --- DELETE A WISH (User removes their own) ---
+// --- DELETE A WISH---
 app.delete('/api/wishes/delete/:id', async (req, res) => {
   try {
     const result = await db.collection("wishes").deleteOne({
@@ -709,7 +709,7 @@ app.delete('/api/wishes/delete/:id', async (req, res) => {
   }
 });
 
-// --- OPTIONAL: CLOSE WISH WHEN FULFILLED ---
+// CLOSE WISH WHEN FULFILLED ---
 app.patch('/api/wishes/fulfill/:id', async (req, res) => {
   try {
     await db.collection("wishes").updateOne(
