@@ -36,7 +36,7 @@ const CategoryFilters = ({ categories, selectedCategory, setSelectedCategory, re
           <FaSearch className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-indigo-500' : 'text-slate-300'}`} size={12} />
           <input 
             type="text"
-            placeholder="Search protocols..."
+            placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-[1.2rem] text-[11px] font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all shadow-sm"
