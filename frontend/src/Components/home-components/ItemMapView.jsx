@@ -237,7 +237,7 @@ const MapController = ({ userCoords, focusCoords, selectedRoute, onClearRoute })
       {/* Recenter Button */}
       <button
         onClick={handleRecenter}
-        className="absolute bottom-24 right-4 z-[1000] bg-white p-3.5 rounded-2xl shadow-2xl border border-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all active:scale-90 group"
+        className="absolute bottom-24 right-4 z-[999] bg-white p-3.5 rounded-2xl shadow-2xl border border-slate-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all active:scale-90 group"
         title="Find my location"
       >
         <FaCrosshairs size={18} className="group-hover:animate-spin" />
@@ -246,7 +246,7 @@ const MapController = ({ userCoords, focusCoords, selectedRoute, onClearRoute })
       {/* Fullscreen Button */}
       <button
         onClick={handleFullscreen}
-        className="absolute bottom-24 right-16 z-[1000] bg-white p-3.5 rounded-2xl shadow-2xl border border-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white transition-all active:scale-90"
+        className="absolute bottom-24 right-16 z-[999ß] bg-white p-3.5 rounded-2xl shadow-2xl border border-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white transition-all active:scale-90"
         title="Fullscreen"
       >
         <FaExpand size={16} />
@@ -256,7 +256,7 @@ const MapController = ({ userCoords, focusCoords, selectedRoute, onClearRoute })
       {selectedRoute && (
         <button
           onClick={onClearRoute}
-          className="absolute bottom-40 right-4 z-[1000] bg-red-500 p-3.5 rounded-2xl shadow-2xl border border-red-400 text-white hover:bg-red-600 transition-all active:scale-90 flex items-center gap-2"
+          className="absolute bottom-40 right-4 z-[999] bg-red-500 p-3.5 rounded-2xl shadow-2xl border border-red-400 text-white hover:bg-red-600 transition-all active:scale-90 flex items-center gap-2"
           title="Clear route"
         >
           <FaTimes size={16} />
@@ -441,7 +441,7 @@ const ItemMapView = ({ filteredItems, userCoords }) => {
       <style>{customStyles}</style>
 
       {/* Top Bar */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between gap-3">
+      <div className="absolute top-4 left-4 right-4 z-[999] flex items-center justify-between gap-3">
         {/* Search Bar */}
         <div className="flex-1 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
           <div className="flex items-center">
@@ -491,7 +491,7 @@ const ItemMapView = ({ filteredItems, userCoords }) => {
       </div>
 
       {/* Status Indicator */}
-      <div className="absolute top-20 left-4 z-[1000]">
+      <div className="absolute top-20 left-4 z-[999]">
         <div className="bg-white/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-xl border border-white/50 flex items-center gap-3">
           <div className="flex gap-1">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
@@ -511,7 +511,7 @@ const ItemMapView = ({ filteredItems, userCoords }) => {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="absolute top-32 left-4 right-4 z-[1000] filter-panel bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-6">
+        <div className="absolute top-32 left-4 right-4 z-[999] filter-panel bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-black text-slate-800 uppercase text-sm tracking-wider">Filters</h3>
             <button
