@@ -15,6 +15,7 @@ import ApplyRequest from './Pages/ApplyRequest.jsx';
 import RequestBoard from './Pages/ApplyRequest.jsx';
 import HyperAdvancedLanding from './Pages/Welcome.jsx';
 import DeveloperContact from './Pages/DevelopperContacts.jsx';
+import { DataProvider } from './contexts/DataContext.jsx';
 
 const router = createBrowserRouter([
   {
@@ -29,7 +30,7 @@ const router = createBrowserRouter([
       { path: '/inbox', element: <Inbox></Inbox> },
       { path: '/requestBoard', element: <RequestBoard></RequestBoard> },
       { path: '/contact', element: <DeveloperContact></DeveloperContact> },
-      
+
     ]
   },
   {
@@ -41,6 +42,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router}></RouterProvider>
+    <DataProvider>
+      <RouterProvider router={router}></RouterProvider>
+    </DataProvider>
   </StrictMode>,
 )
