@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router';
-import { FaLocationArrow, FaDirections, FaMapMarkerAlt, FaBoxOpen } from 'react-icons/fa';
+import { FaLocationArrow, FaDirections, FaMapMarkerAlt, FaBoxOpen, FaSync } from 'react-icons/fa';
 
-// 1. Create the Skeleton Card inside the same file for easy access
 const SkeletonCard = () => (
     <div className="bg-white rounded-[1rem] overflow-hidden border border-slate-100 shadow-sm animate-pulse">
         <div className="h-52 bg-slate-100 w-full"></div>
@@ -15,73 +14,91 @@ const SkeletonCard = () => (
     </div>
 );
 
-const ItemGrid = ({ filteredItems, userCoords, calculateDistance, resetFilters, loading }) => {
+const ItemGrid = ({ filteredItems, userCoords, calculateDistance, resetFilters, loading, handleManualRefresh, isRefreshing }) => {
     
-    // 2. If loading is true, show 8 skeleton cards
-    if (loading) {
+    // 1. Loading State
+    if (loading && !isRefreshing) {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                    <SkeletonCard key={n} />
-                ))}
-            </div>
-        );
-    }
-
-    // 3. If not loading and no items found
-    if (filteredItems.length === 0) {
-        return (
-            <div className="col-span-full py-24 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
-                <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaBoxOpen className="text-4xl text-slate-300" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">No items found</h3>
-                <button onClick={resetFilters} className="mt-4 bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase">
-                    Clear All Filters
-                </button>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => <SkeletonCard key={n} />)}
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredItems.map((item) => {
-                const itemLat = item.location?.coordinates[1];
-                const itemLng = item.location?.coordinates[0];
-                const distance = userCoords && item.location?.coordinates ? calculateDistance(userCoords[0], userCoords[1], itemLat, itemLng) : null;
+        <div className="space-y-6">
+            {/* Header with Refresh Button */}
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center">
+                  <span className='text-blue-500 '>{filteredItems.length} </span>  Items  Available 
+                </h2>
+                <button
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing || loading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50 active:scale-95"
+                >
+                    <FaSync className={`${isRefreshing ? 'animate-spin' : ''}`} />
+                    {isRefreshing ? 'Refreshing...' : 'Refresh Items'}
+                </button>
+            </div>
 
-                return (
-                    <div key={item._id} className="bg-white rounded-[1rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all group">
-                        <div className="relative h-52 overflow-hidden">
-                            <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                            <div className="absolute top-4 left-4 flex flex-col gap-2">
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg ${item.status === 'available' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>{item.status}</span>
-                                {distance !== null && (
-                                    <span className="bg-white/90 backdrop-blur-sm text-slate-800 px-3 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-sm">
-                                        <FaLocationArrow className="text-indigo-500 text-[8px]" /> {distance} KM Away
-                                    </span>
-                                )}
-                            </div>
-                            {/* Fixed the Maps Link here too */}
-                            <a href={`https://www.google.com/maps/search/?api=1&query=${itemLat},${itemLng}`} target="_blank" rel="noreferrer" className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-indigo-600 shadow-md hover:bg-indigo-600 hover:text-white transition-colors">
-                                <FaDirections size={14} />
-                            </a>
-                            <div className="absolute bottom-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-xl text-xs font-black shadow-lg">৳{item.price} / {item.priceType}</div>
-                        </div>
-                        <div className="p-6">
-                            <div className="text-[10px] font-black text-indigo-500 uppercase mb-2">{item.category}</div>
-                            <h3 className="font-bold text-lg text-slate-800 mb-2 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase mb-6">
-                                <FaMapMarkerAlt className="text-indigo-400" />
-                                <span className="truncate">{item.address || "Dhaka"}</span>
-                            </div>
-                            <Link to={`/item/${item._id}`} className={`w-full block text-center py-3 rounded-2xl font-black text-xs uppercase transition-all ${item.status === 'available' ? 'bg-green-300 text-slate-800 hover:bg-indigo-600 hover:text-white' : 'bg-red-400 hover:bg-red-600 text-white'}`}>
-                                {item.status === 'available' ? 'View Details' : 'Currently Booked'}
-                            </Link>
-                        </div>
+            {/* 2. No Items Found State */}
+            {filteredItems.length === 0 ? (
+                <div className="col-span-full py-24 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
+                    <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FaBoxOpen className="text-4xl text-slate-300" />
                     </div>
-                );
-            })}
+                    <h3 className="text-xl font-bold text-slate-800">No items found</h3>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 px-6">
+                        <button onClick={resetFilters} className="bg-slate-100 text-slate-600 px-8 py-3 rounded-2xl font-black text-xs uppercase hover:bg-slate-200 transition-colors">
+                            Clear Filters
+                        </button>
+                        <button onClick={handleManualRefresh} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-lg shadow-indigo-100">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                /* 3. The Actual Grid */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {filteredItems.map((item) => {
+                        const itemLat = item.coordinates?.[1] || item.location?.coordinates[1];
+                        const itemLng = item.coordinates?.[0] || item.location?.coordinates[0];
+                        const distance = userCoords && (itemLat && itemLng) ? calculateDistance(userCoords[0], userCoords[1], itemLat, itemLng) : null;
+
+                        return (
+                            <div key={item._id} className="bg-white rounded-[1rem] overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl transition-all group">
+                                <div className="relative h-52 overflow-hidden">
+                                    <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg ${item.status === 'available' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>{item.status}</span>
+                                        {distance !== null && (
+                                            <span className="bg-white/90 backdrop-blur-sm text-slate-800 px-3 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1 shadow-sm">
+                                                <FaLocationArrow className="text-indigo-500 text-[8px]" /> {distance} KM Away
+                                            </span>
+                                        )}
+                                    </div>
+                                    <a href={`https://www.google.com/maps/search/?api=1&query=${itemLat},${itemLng}`} target="_blank" rel="noreferrer" className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-indigo-600 shadow-md hover:bg-indigo-600 hover:text-white transition-colors">
+                                        <FaDirections size={14} />
+                                    </a>
+                                    <div className="absolute bottom-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-xl text-xs font-black shadow-lg">৳{item.price} / {item.priceType}</div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="text-[10px] font-black text-indigo-500 uppercase mb-2">{item.category}</div>
+                                    <h3 className="font-bold text-lg text-slate-800 mb-2 truncate group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                                    <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase mb-6">
+                                        <FaMapMarkerAlt className="text-indigo-400" />
+                                        <span className="truncate">{item.address || "Area details hidden"}</span>
+                                    </div>
+                                    <Link to={`/item/${item._id}`} className={`w-full block text-center py-3 rounded-2xl font-black text-xs uppercase transition-all ${item.status === 'available' ? 'bg-green-300 text-slate-800 hover:bg-indigo-600 hover:text-white' : 'bg-red-400 hover:bg-red-600 text-white'}`}>
+                                        {item.status === 'available' ? 'View Details' : 'Currently Booked'}
+                                    </Link>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };

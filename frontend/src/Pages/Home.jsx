@@ -8,15 +8,20 @@ import { useData } from '../contexts/useData';
 
 const Home = () => {
 
-  const { items, categories, loading, userCoords } = useData();
-  
+  const { items, categories, loading, userCoords, refreshData } = useData();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [locationSearch, setLocationSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [isSortingNearest, setIsSortingNearest] = useState(false);
-  
+  const [isRefreshing, setIsRefreshing] = useState(false); // Add this state
 
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshData();
+    setIsRefreshing(false);
+  };
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -31,8 +36,8 @@ const Home = () => {
     const R = 6371; // কি.মি.
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + 
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
     return parseFloat((R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)))).toFixed(1));
   };
 
@@ -60,6 +65,7 @@ const Home = () => {
 
   return (
     <div className="space-y-6 animate-fadeIn p-4 max-w-7xl mx-auto pb-20">
+      
       <SearchBar
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
         locationSearch={locationSearch} setLocationSearch={setLocationSearch}
@@ -76,12 +82,13 @@ const Home = () => {
       {viewMode === 'map' ? (
         <ItemMapView filteredItems={filteredItems} userCoords={userCoords} />
       ) : (
-        <ItemGrid 
-           filteredItems={filteredItems} 
-           userCoords={userCoords} 
-           calculateDistance={calculateDistance} 
-           resetFilters={resetFilters} 
-           loading={loading} 
+        <ItemGrid
+          handleManualRefresh={handleManualRefresh}
+          filteredItems={filteredItems}
+          userCoords={userCoords}
+          calculateDistance={calculateDistance}
+          resetFilters={resetFilters}
+          loading={loading}
         />
       )}
     </div>
