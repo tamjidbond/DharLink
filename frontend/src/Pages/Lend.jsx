@@ -5,11 +5,12 @@ import { FaPlus, FaCamera, FaMapMarkerAlt, FaCheckCircle, FaPhoneAlt, FaEnvelope
 import L from 'leaflet';
 import { useNavigate, useLocation } from 'react-router'; 
 import Swal from 'sweetalert2';
+import {  } from '../contexts/DataContext';
 
 // 1. Fix Leaflet Icons (Crucial for the map to show markers correctly)
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { useData } from '../contexts/DataContext';
+import { useData } from '../contexts/useData';
 
 
  
@@ -191,8 +192,9 @@ const Lend = () => {
         });
       }
 
+      await refreshData()
+      
       setSuccess(true);
-      refreshData()
       setTimeout(() => navigate('/'), 2500);
 
     } catch (err) {
