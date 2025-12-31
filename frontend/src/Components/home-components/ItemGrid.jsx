@@ -91,7 +91,7 @@ const ItemGrid = ({ filteredItems, userCoords, calculateDistance, resetFilters, 
                                     {/* Maps Link Fix: removed the '0' before {itemLat} */}
                                     {itemLat && itemLng && (
                                         <a 
-                                            href={`https://www.google.com/maps?q=${itemLat},${itemLng}`} 
+                                            href={`https://www.google.com/maps/dir/?api=1&destination=${itemLat},${itemLng}`} 
                                             target="_blank" 
                                             rel="noreferrer" 
                                             className="absolute top-4 right-4 bg-white/90 p-2 rounded-full text-indigo-600 shadow-md hover:bg-indigo-600 hover:text-white transition-colors"
